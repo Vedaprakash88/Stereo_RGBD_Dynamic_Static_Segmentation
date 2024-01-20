@@ -17,6 +17,7 @@ def visualize_ply(file_path):
     # Visualize the point cloud
     o3d.visualization.draw_geometries([ply])
 
+visualize_ply("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI\\archive\\PLY\\testing\\000100.ply")
 
 for sub_dir in sub_dirs:
     # Get list of files in each directory
@@ -41,8 +42,9 @@ for sub_dir in sub_dirs:
                                                              o3d.camera.PinholeCameraIntrinsic(
                                                                  o3d.camera.PinholeCameraIntrinsicParameters.
                                                                  PrimeSenseDefault))
+        pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+        # o3d.visualization.draw_geometries([pcd])
 
         # Save point cloud
         o3d.io.write_point_cloud(os.path.join(ply_dir, sub_dir, file.replace('.png', '.ply')), pcd)
 
-visualize_ply("/path/to/your/file.ply")
