@@ -6,10 +6,10 @@ import pandas as pd
 from tqdm import tqdm
 
 # Define the paths
-base_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI\\archive"
-left_image_folder = os.path.join(base_path, "data_object_image_2")
-right_image_folder = os.path.join(base_path, "data_object_image_3")
-calib_folder = os.path.join(base_path, "data_object_calib")
+base_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\"
+left_image_folder = os.path.join(base_path, "data_scene_flow_multiview\\image_2")
+right_image_folder = os.path.join(base_path, "data_scene_flow_multiview\\image_3")
+calib_folder = os.path.join(base_path, "data_scene_flow_calib\\calib_cam_to_cam")
 disp_output_folder = os.path.join(base_path, "Disp_images")
 rgb_output_folder = os.path.join(base_path, "RGB_images")
 depth_output_folder = os.path.join(base_path, "Depth_images")
@@ -40,10 +40,10 @@ def load_calib(calib_file):
     with open(calib_file, 'r') as f:
         fin = f.readlines()
         for line in fin:
-            if line[:2] == 'P2':
-                P2 = np.array(line[4:].strip().split(" ")).astype('float32').reshape(3, -1)
-            elif line[:2] == "P3":
-                P3 = np.array(line[4:].strip().split(" ")).astype('float32').reshape(3, -1)
+            if line[:9] == 'P_rect_02':
+                P2 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
+            elif line[:9] == "P_rect_03":
+                P3 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
 
     return P2, P3
 
@@ -53,7 +53,7 @@ def stereo_rectify(left_img_clr, P2, P3):
     cam1 = P2[:, :3]  # left image - P2
     cam2 = P3[:, :3]  # right image - P3
 
-    Tmat = np.array([0.54, 0., 0.])
+    Tmat = np.array([0.54, 0., 0.]) # from image of KITTI car
 
     rev_proj_matrix = np.zeros((4, 4))
 
@@ -142,7 +142,7 @@ for subfolder in subfolders:
             right_img_clr = cv2.imread(os.path.join(right_images_path, img_file))
 
             # Load calibration file
-            calib_file = os.path.join(calib_path, img_file.replace('.png', '.txt'))
+            calib_file = os.path.join(calib_path, img_file[:6] + '.txt')
             P2, P3 = load_calib(calib_file)
 
             # Generate disparity map
@@ -174,3 +174,5 @@ for subfolder in subfolders:
 # Save error DataFrame to Excel
 if error_df.dropna().empty:
     error_df.to_excel(os.path.join(error_folder, 'errors.xlsx'), index=False)
+
+
