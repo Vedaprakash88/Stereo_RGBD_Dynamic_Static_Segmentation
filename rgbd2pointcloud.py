@@ -45,4 +45,4 @@ for sub_dir in sub_dirs:
         # Save point cloud
         o3d.io.write_point_cloud(os.path.join(ply_dir, sub_dir, file.replace('.png', '.ply')), pcd)
 
-visualize_ply("/path/to/your/file.ply")
+visualize_ply("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\PLY\\training\\000000_00.ply")
