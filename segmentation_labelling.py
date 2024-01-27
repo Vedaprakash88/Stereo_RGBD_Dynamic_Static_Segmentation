@@ -43,11 +43,11 @@ def detect_moving_objects(source_file, target_file):
     # Compute the difference between the source and target point clouds
     pcd_diff = source - target
 
-    # Assign a unique color to moving objects (e.g., red)
+    # Assign a unique color to moving objects (red)
     moving_color = [1, 0, 0]  # RGB values range from 0 to 1
 
-    # Assign a different color to static objects (e.g., green)
-    static_color = [0, 1, 0]  # RGB values range from 0 to 1
+    # Assign a different color to static objects (grey)
+    static_color = [0.5, 0.5, 0.5]  # RGB values range from 0 to 1
 
     # Create a new point cloud for moving objects
     moving_pcd = o3d.geometry.PointCloud()
