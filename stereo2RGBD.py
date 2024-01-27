@@ -7,13 +7,13 @@ from tqdm import tqdm
 
 # Define the paths
 base_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\"
-left_image_folder = os.path.join(base_path, "data_scene_flow_multiview\\image_2")
-right_image_folder = os.path.join(base_path, "data_scene_flow_multiview\\image_3")
+left_image_folder = os.path.join(base_path, "data_scene_flow\\image_2")
+right_image_folder = os.path.join(base_path, "data_scene_flow\\image_3")
 calib_folder = os.path.join(base_path, "data_scene_flow_calib\\calib_cam_to_cam")
-disp_output_folder = os.path.join(base_path, "Disp_images")
-rgb_output_folder = os.path.join(base_path, "RGB_images")
-depth_output_folder = os.path.join(base_path, "Depth_images")
-error_folder = os.path.join(base_path, "Error_Handling")
+disp_output_folder = os.path.join(base_path, "data_scene_flow\Disp_images")
+rgb_output_folder = os.path.join(base_path, "data_scene_flow\\RGB_images")
+depth_output_folder = os.path.join(base_path, "data_scene_flow\\Depth_images")
+error_folder = os.path.join(base_path, "data_scene\\Error_Handling")
 error_df = pd.DataFrame()
 
 # Create output directories if they do not exist
