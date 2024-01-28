@@ -13,7 +13,7 @@ for sub_dir in sub_dirs:
     # Find common files in both directories
     common_files = list(set(rgb_files) & set(depth_files))
 
-    for file in tqdm(iterable=common_files, desc='Point Clouds Created:', colour='blue', unit='image'):
+    for file in tqdm(iterable=common_files, desc=sub_dir + ' Point Clouds Created:', colour='blue', unit='image'):
         # Load RGB image
         try:
             rgb_image, depth_image = Rgb23D.read_images(rgb_dir, depth_dir, sub_dir, file)

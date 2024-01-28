@@ -44,6 +44,10 @@ class Rgb23D:
                                                              o3d.camera.PinholeCameraIntrinsic(
                                                                  o3d.camera.PinholeCameraIntrinsicParameters.
                                                                  PrimeSenseDefault))
+
+        # Flip it, otherwise the pointcloud will be upside down
+        pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+
         # Save point cloud
         o3d.io.write_point_cloud(os.path.join(ply_dir, sub_dir, file.replace('.png', '.ply')), pcd)
         return f'{file} point cloud created'
