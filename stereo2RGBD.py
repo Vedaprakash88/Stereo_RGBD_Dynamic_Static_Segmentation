@@ -43,10 +43,9 @@ def load_calib(calib_file):
         for line in fin:
             if line[:9] == 'P_rect_02':
                 P2 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
-                cam2_parameters = [line[11:23], line[76:89], line[37:49], line[89:102]]
             elif line[:9] == "P_rect_03":
                 P3 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
-    return P2, P3, cam2_parameters
+    return P2, P3
 
 
 # Function to rectify images
@@ -145,7 +144,7 @@ for subfolder in subfolders:
 
             # Load calibration file
             calib_file = os.path.join(calib_path, img_file[:6] + '.txt')
-            P2, P3, _ = load_calib(calib_file)
+            P2, P3 = load_calib(calib_file)
 
             # Generate disparity map
             disparity = generate_disparity_map(left_img_GS, right_img_GS)
