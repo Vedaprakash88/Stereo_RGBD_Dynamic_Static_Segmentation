@@ -19,7 +19,7 @@ for sub_dir in sub_dirs:
             rgb_image, depth_image = Rgb23D.read_images(rgb_dir, depth_dir, sub_dir, file)
             calib_file = os.path.join(calib_folder, sub_dir, file[:6] + '.txt')
             _, _, calibration_params = load_calib(calib_file)
-            msg = Rgb23D.create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calib_file)
+            msg = Rgb23D.create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibration_params)
             # msg2 = Rgb23D.create_point_cloud_from_depth(depth_image, ply_dir, sub_dir, file)
         except Exception as e:
             logging.error("Error occurred", exc_info=True)

@@ -40,7 +40,7 @@ class Rgb23D:
         return rgb_image, depth_image
 
     @staticmethod
-    def create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calib_file):
+    def create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibration_params):
         rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(rgb_image, depth_image,
                                                                         convert_rgb_to_intensity=True)
         # plt.subplot(1, 2, 1)
@@ -52,14 +52,17 @@ class Rgb23D:
         # plt.show()
 
         # Intrinsic parameters (with reference to the 00001.txt)
-        calibration_params = np.loadtxt(calib_file)
+
+        fx = calibration_params[0]  # Focal length in x-axis
+        fy = calibration_params[1]  # Focal length in y-axis
+        cx = calibration_params[2]  # Principal point in x-axis
+        cy = calibration_params[3]  # Principal point in y-axis
 
 
-
-        fx = 7.215377e+02  # Focal length in x-axis
-        fy = 7.215377e+02  # Focal length in y-axis
-        cx = 6.095593e+02  # Principal point in x-axis
-        cy = 1.728540e+02  # Principal point in y-axis
+        # fx = 7.215377e+02  # Focal length in x-axis
+        # fy = 7.215377e+02  # Focal length in y-axis
+        # cx = 6.095593e+02  # Principal point in x-axis
+        # cy = 1.728540e+02  # Principal point in y-axis
 
         # Get the width and height of the image
         height, width, _ = rgb_image.shape
