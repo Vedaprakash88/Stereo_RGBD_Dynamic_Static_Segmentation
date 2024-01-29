@@ -4,6 +4,7 @@ import numpy as np
 import logging
 import pandas as pd
 from tqdm import tqdm
+import open3d as o3d
 
 # Define the paths
 base_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\"
@@ -42,10 +43,10 @@ def load_calib(calib_file):
         for line in fin:
             if line[:9] == 'P_rect_02':
                 P2 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
+                cam2_parameters = [line[11:23], line[76:89], line[37:49], line[89:102]]
             elif line[:9] == "P_rect_03":
                 P3 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
-
-    return P2, P3
+    return P2, P3, cam2_parameters
 
 
 # Function to rectify images
@@ -76,17 +77,18 @@ def generate_disparity_map(left_img, right_img):
 def generate_rgbd_image(points_3D):
     # Create RGB-D image
     depth_image = points_3D[..., 2]  # Depth values
-
     return depth_image
 
 
 def get_3D(disparity, rev_proj_matrix):
     points_3D = cv2.reprojectImageTo3D(disparity, rev_proj_matrix)
 
+
+
     # reflect on x-axis
-    reflect_matrix = np.identity(3)
-    reflect_matrix[0] *= -1
-    points_3D = np.matmul(points_3D, reflect_matrix)
+    # reflect_matrix = np.identity(3)
+    # reflect_matrix[0] *= -1
+    # points_3D = np.matmul(points_3D, reflect_matrix)
 
     return points_3D
 
@@ -143,7 +145,7 @@ for subfolder in subfolders:
 
             # Load calibration file
             calib_file = os.path.join(calib_path, img_file[:6] + '.txt')
-            P2, P3 = load_calib(calib_file)
+            P2, P3, _ = load_calib(calib_file)
 
             # Generate disparity map
             disparity = generate_disparity_map(left_img_GS, right_img_GS)

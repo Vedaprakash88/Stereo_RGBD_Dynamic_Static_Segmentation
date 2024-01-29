@@ -2,8 +2,8 @@ from rgbd2pointcloud import Rgb23D
 import os
 from tqdm import tqdm
 import logging
-
-rgb_dir, depth_dir, ply_dir, sub_dirs, error_folder, error_df = Rgb23D.get_paths()
+from stereo2RGBD import load_calib
+rgb_dir, depth_dir, ply_dir, sub_dirs, error_folder, error_df, calib_folder = Rgb23D.get_paths()
 
 for sub_dir in sub_dirs:
     # Get list of files in each directory
@@ -17,7 +17,10 @@ for sub_dir in sub_dirs:
         # Load RGB image
         try:
             rgb_image, depth_image = Rgb23D.read_images(rgb_dir, depth_dir, sub_dir, file)
-            msg = Rgb23D.create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file)
+            calib_file = os.path.join(calib_folder, sub_dir, file[:6] + '.txt')
+            _, _, calibration_params = load_calib(calib_file)
+            msg = Rgb23D.create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calib_file)
+            # msg2 = Rgb23D.create_point_cloud_from_depth(depth_image, ply_dir, sub_dir, file)
         except Exception as e:
             logging.error("Error occurred", exc_info=True)
             error_type = {'Error_Type': type(e).__name__, 'Explanation': str(e), 'Stage': 'Image Processing',
