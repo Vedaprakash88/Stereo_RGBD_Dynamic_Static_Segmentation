@@ -46,8 +46,6 @@ def read_images(rgb_dir, depth_dir, sub_dir, file):
 
     # Load depth image
     depth_image = o3d.io.read_image(os.path.join(depth_dir, sub_dir, file))
-    print(depth_image)
-    print(rgb_image)
 
     return rgb_image, depth_image
 

@@ -89,11 +89,14 @@ def get_3D(disparity, rev_proj_matrix):
     # reflect_matrix[0] *= -1
     # points_3D = np.matmul(points_3D, reflect_matrix)
 
-    return points_3D
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points_3D.reshape(-1, 3))
+
+    return points_3D, pcd
 
 
 # Function to save disparity map and RGB-D image
-def save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disparity, left_img_clr, depth_image,
+def save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disparity, left_img_clr, depth_image, pcd,
                 img_file, subfolder):
     # get right folders
 
@@ -118,6 +121,10 @@ def save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disp
     # alize depth to 0-255 and convert to 8-bit integer
     cv2.imwrite(filename=depth_file, img=depth_image)
 
+    # save pcd
+    cv2_pcd_folder = 'D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD'
+    pcd_file = os.path.join(cv2_pcd_folder, subfolder, img_file[:6] + '.pcd')
+    o3d.io.write_point_cloud(pcd_file, pcd)
 
 # Iterate over subfolders
 for subfolder in subfolders:
@@ -133,7 +140,7 @@ for subfolder in subfolders:
     common_files = list(set(left_images) & set(right_images))
 
     # Iterate over images
-    for img_file in tqdm(common_files):
+    for img_file in tqdm(iterable=common_files, desc=f'Processing now: {subfolder}'):
         try:
             # Load images
             left_img_GS = cv2.imread(os.path.join(left_images_path, img_file), cv2.IMREAD_GRAYSCALE)
@@ -153,14 +160,14 @@ for subfolder in subfolders:
             rev_proj_matrix = stereo_rectify(left_img_clr, P2, P3)
 
             # Project to 3D
-            points_3D = get_3D(disparity, rev_proj_matrix)
+            points_3D, pcd = get_3D(disparity, rev_proj_matrix)
 
             # Generate RGB image and depth image
             depth_image = generate_rgbd_image(points_3D)
 
             # Save disparity map and RGB-D image
             save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disparity, left_img_clr,
-                        depth_image, img_file, subfolder)
+                        depth_image, pcd, img_file, subfolder)
         except cv2.error as e:
             logging.error("OpenCV Error occurred", exc_info=True)
             error_type = {'Error_Type': 'OpenCVError', 'Explanation': str(e), 'Stage': 'Image Processing',
