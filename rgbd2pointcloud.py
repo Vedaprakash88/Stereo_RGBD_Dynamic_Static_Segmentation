@@ -12,11 +12,8 @@ def load_calib(calib_file):
         fin = f.readlines()
         for line in fin:
             if line[:9] == 'P_rect_02':
-                P2 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
-                cam2_parameters = [line[11:23], line[76:89], line[37:49], line[89:102]]
-            elif line[:9] == "P_rect_03":
-                P3 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
-    return P2, P3, cam2_parameters
+               cam2_parameters = [line[11:23], line[76:89], line[37:49], line[89:102]]
+    return cam2_parameters
 
 
 def get_paths():
@@ -61,23 +58,18 @@ def create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibrati
     # plt.imshow(rgbd_image.depth)
     # plt.show()
 
-    # Intrinsic parameters (with reference to the 00001.txt)
+    calibration_params = list(map(float, calibration_params))
 
     fx = calibration_params[0]  # Focal length in x-axis
     fy = calibration_params[1]  # Focal length in y-axis
     cx = calibration_params[2]  # Principal point in x-axis
     cy = calibration_params[3]  # Principal point in y-axis
 
-    # fx = 7.215377e+02  # Focal length in x-axis
-    # fy = 7.215377e+02  # Focal length in y-axis
-    # cx = 6.095593e+02  # Principal point in x-axis
-    # cy = 1.728540e+02  # Principal point in y-axis
-
     # Get the width and height of the image
-    height, width, _ = rgb_image.shape
+    height, width = np.asarray(rgb_image).shape[:2]
 
     # Create a PinholeCameraIntrinsic object using the intrinsic parameters
-    intrinsic = o3d.camera.PinholeCameraIntrinsic(width, height, fx, fy, cx, cy)
+    intrinsic = o3d.pybind.camera.PinholeCameraIntrinsic(width=width, height=height, fx=fx, fy=fy, cx=cx, cy=cy)
 
     # Create point cloud
     pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_image, intrinsic)
@@ -85,7 +77,7 @@ def create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibrati
     # Flip it, otherwise the pointcloud will be upside down
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 
-    o3d.visualization.draw_plotly([pcd], zoom=0.3412)
+    # o3d.visualization.draw_plotly([pcd], zoom=0.3412)
 
     # Save point cloud
     o3d.io.write_point_cloud(os.path.join(ply_dir, sub_dir, file.replace('.png', '.pcd')), pcd)
@@ -127,7 +119,7 @@ for sub_dir in sub_dirs:
         try:
             rgb_image, depth_image = read_images(rgb_dir, depth_dir, sub_dir, file)
             calib_file = os.path.join(calib_folder, sub_dir, file[:6] + '.txt')
-            _, _, calibration_params = load_calib(calib_file)
+            calibration_params = load_calib(calib_file)
             msg = create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibration_params)
             # msg2 = Rgb23D.create_point_cloud_from_depth(depth_image, ply_dir, sub_dir, file)
         except Exception as e:

@@ -53,7 +53,7 @@ def stereo_rectify(left_img_clr, P2, P3):
     cam1 = P2[:, :3]  # left image - P2
     cam2 = P3[:, :3]  # right image - P3
 
-    Tmat = np.array([0.54, 0., 0.]) # from image of KITTI car
+    Tmat = np.array([0.54, 0., 0.])  # from image of KITTI car
 
     rev_proj_matrix = np.zeros((4, 4))
 
@@ -67,10 +67,9 @@ def stereo_rectify(left_img_clr, P2, P3):
 
 # Function to generate disparity map
 def generate_disparity_map(left_img, right_img):
-    stereo = cv2.StereoBM_create(numDisparities=96, blockSize=11)
-    disparity = stereo.compute(left_img, right_img)
+    stereo = cv2.StereoBM_create(numDisparities=0, blockSize=11)
+    disparity = stereo.compute(left_img, right_img).astype(np.float32) / 16.0
     return disparity
-
 
 # Function to generate RGB-D image
 def generate_rgbd_image(points_3D):
@@ -81,17 +80,11 @@ def generate_rgbd_image(points_3D):
 
 def get_3D(disparity, rev_proj_matrix):
     points_3D = cv2.reprojectImageTo3D(disparity, rev_proj_matrix)
-
-
-
-    # reflect on x-axis
-    # reflect_matrix = np.identity(3)
-    # reflect_matrix[0] *= -1
-    # points_3D = np.matmul(points_3D, reflect_matrix)
-
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points_3D.reshape(-1, 3))
 
+    # reflect on x-axis
+    points_3D[:, :, 0] = -points_3D[:, :, 0]
     return points_3D, pcd
 
 
@@ -123,8 +116,9 @@ def save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disp
 
     # save pcd
     cv2_pcd_folder = 'D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD'
-    pcd_file = os.path.join(cv2_pcd_folder, subfolder, img_file[:6] + '.pcd')
+    pcd_file = os.path.join(cv2_pcd_folder, subfolder, img_file.replace('.png', '.pcd'))
     o3d.io.write_point_cloud(pcd_file, pcd)
+
 
 # Iterate over subfolders
 for subfolder in subfolders:
@@ -143,11 +137,12 @@ for subfolder in subfolders:
     for img_file in tqdm(iterable=common_files, desc=f'Processing now: {subfolder}'):
         try:
             # Load images
-            left_img_GS = cv2.imread(os.path.join(left_images_path, img_file), cv2.IMREAD_GRAYSCALE)
-            right_img_GS = cv2.imread(os.path.join(right_images_path, img_file), cv2.IMREAD_GRAYSCALE)
 
             left_img_clr = cv2.imread(os.path.join(left_images_path, img_file))
             right_img_clr = cv2.imread(os.path.join(right_images_path, img_file))
+
+            left_img_GS = cv2.imread(os.path.join(left_images_path, img_file), cv2.IMREAD_GRAYSCALE)
+            right_img_GS = cv2.imread(os.path.join(right_images_path, img_file), cv2.IMREAD_GRAYSCALE)
 
             # Load calibration file
             calib_file = os.path.join(calib_path, img_file[:6] + '.txt')
@@ -182,5 +177,3 @@ for subfolder in subfolders:
 # Save error DataFrame to Excel
 if error_df.dropna().empty:
     error_df.to_excel(os.path.join(error_folder, 'errors.xlsx'), index=False)
-
-
