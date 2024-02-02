@@ -50,13 +50,6 @@ def read_images(rgb_dir, depth_dir, sub_dir, file):
 def create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibration_params):
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(rgb_image, depth_image,
                                                                     convert_rgb_to_intensity=True)
-    # plt.subplot(1, 2, 1)
-    # plt.title('greyscale image')
-    # plt.imshow(rgbd_image.color)
-    # plt.subplot(1, 2, 2)
-    # plt.title('depth image')
-    # plt.imshow(rgbd_image.depth)
-    # plt.show()
 
     calibration_params = list(map(float, calibration_params))
 
@@ -69,7 +62,7 @@ def create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibrati
     height, width = np.asarray(rgb_image).shape[:2]
 
     # Create a PinholeCameraIntrinsic object using the intrinsic parameters
-    intrinsic = o3d.pybind.camera.PinholeCameraIntrinsic(width=width, height=height, fx=fx, fy=fy, cx=cx, cy=cy)
+    intrinsic = o3d.pybind.camera.PinholeCameraIntrinsic() #width=width, height=height, fx=fx, fy=fy, cx=cx, cy=cy)
 
     # Create point cloud
     pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_image, intrinsic)

@@ -8,13 +8,21 @@ import matplotlib.pyplot as plt
 # target = o3d.io.read_point_cloud("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\PCD\\training\\000000_11.pcd")
 # # aligned = o3d.io.read_point_cloud("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\aligned\\training\\000100.ply")
 #
-ex10 = o3d.io.read_point_cloud("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD\\training\\000100_10.pcd")
-ex11 = o3d.io.read_point_cloud("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD\\training\\000101_11.pcd")
+ex10 = o3d.io.read_point_cloud("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD\\training\\000194_10.pcd")
+ex11 = o3d.io.read_point_cloud("D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD\\training\\000194_11.pcd")
 # #
 # #
-o3d.visualization.draw_plotly([ex10], zoom=0.3412)
-o3d.visualization.draw_plotly([ex11], zoom=0.3412)
-o3d.visualization.draw_geometries([ex10])
+# o3d.visualization.draw_plotly([ex10], zoom=0.3412)
+# o3d.visualization.draw_plotly([ex11], zoom=0.3412)
+# o3d.visualization.draw_geometries([ex10])
+
+points_np = np.asarray(ex10.points)
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(points_np[:,0], points_np[:,1], points_np[:,2])
+plt.show()
+
 
 # left = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\image_2\\training\\000000_10.png"
 # right = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\image_3\\training\\000000_10.png"

@@ -29,7 +29,6 @@ def register_point_clouds(source_file, target_file, align_dir, unique_file):
 
     # Save aligned point cloud
     o3d.io.write_point_cloud(filename=os.path.join(align_dir, unique_file + '.ply'), pointcloud=source_reg)
-
     return None
 
 
@@ -63,4 +62,4 @@ for subfolder in subfolders:
                 source_file = os.path.join(align_save_path, unique_file + '.ply')
                 target_file = os.path.join(files_path, unique_file + '_' + f2 + '.ply')
                 comb_save_path = os.path.join(comb_save_folder, unique_file)
-                detect_motion_voxel_grid_difference(pcd1_file=source_file, pcd2_file=target_file, save_path=comb_save_path)
+                # detect_motion_voxel_grid_difference(pcd1_file=source_file, pcd2_file=target_file, save_path=comb_save_path)
