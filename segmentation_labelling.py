@@ -72,9 +72,8 @@ def detect_moving_objects(registered_point_cloud, save_path, distance_threshold=
     static_points = point_cloud_np[~moving_points_mask]
 
     # Extract colors
-    colors = np.asarray(registered_point_cloud.colors)
-    moving_colors = colors[moving_points_mask]
-    static_colors = colors[~moving_points_mask]
+    moving_colors = np.tile([0.1, 0.6, 0.3], (len(moving_points), 1))  # Red for moving points
+    static_colors = np.tile([0.5, 0.5, 0.5], (len(static_points), 1))  # Grey for static points
 
     # Create separate point clouds for moving and static points
     moving_point_cloud = o3d.geometry.PointCloud()
@@ -93,44 +92,45 @@ def detect_moving_objects(registered_point_cloud, save_path, distance_threshold=
         np.vstack([moving_point_cloud.colors, static_point_cloud.colors]))
 
     # Visualize the combined result
-    o3d.visualization.draw_geometries([combined_point_cloud])
+    # o3d.visualization.draw_geometries([combined_point_cloud])
 
     # Save the combined point cloud to a file
     o3d.io.write_point_cloud(save_path, combined_point_cloud)
 
 
 # Example usage
+def do_this():
+    ply_dir = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD"
+    align_dir = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\aligned"
+    labeled_dir = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\labeled"
+    calib_folder = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow_calib\\calib_cam_to_cam"
+    subfolders = ["testing", "training"]
+    f1 = '10'
+    f2 = '11'
+    os.makedirs(align_dir, exist_ok=True)
+    os.makedirs(labeled_dir, exist_ok=True)
 
-ply_dir = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\CV2_PCD"
-align_dir = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\aligned"
-labeled_dir = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\labeled"
-calib_folder = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow_calib\\calib_cam_to_cam"
-subfolders = ["testing", "training"]
-f1 = '10'
-f2 = '11'
-os.makedirs(align_dir, exist_ok=True)
-os.makedirs(labeled_dir, exist_ok=True)
+    for subfolder in subfolders:
+        files_path = os.path.join(ply_dir, subfolder)
+        file_names = os.listdir(files_path)
+        file_names_unique = {each_file[:6] for each_file in file_names}
+        align_save_path = os.path.join(align_dir, subfolder)
+        comb_save_folder = os.path.join(labeled_dir, subfolder)
+        os.makedirs(align_save_path, exist_ok=True)
+        os.makedirs(comb_save_folder, exist_ok=True)
+        sub_folder_len = len(os.listdir(align_save_path))
+        calib_path = os.path.join(calib_folder, subfolder)
 
-for subfolder in subfolders:
-    files_path = os.path.join(ply_dir, subfolder)
-    file_names = os.listdir(files_path)
-    file_names_unique = {each_file[:6] for each_file in file_names}
-    align_save_path = os.path.join(align_dir, subfolder)
-    comb_save_folder = os.path.join(labeled_dir, subfolder)
-    os.makedirs(align_save_path, exist_ok=True)
-    os.makedirs(comb_save_folder, exist_ok=True)
-    sub_folder_len = len(os.listdir(align_save_path))
-    calib_path = os.path.join(calib_folder, subfolder)
-
-    if sub_folder_len < len(file_names_unique):
-        for unique_file in tqdm(iterable=file_names_unique, desc=subfolder + ' image registration'):
-            source_file = os.path.join(files_path, unique_file + '_' + f1 + '.pcd')
-            target_file = os.path.join(files_path, unique_file + '_' + f2 + '.pcd')
-            calib_file = os.path.join(calib_path, unique_file + '.txt')
-            register_point_clouds(source_file=source_file, target_file=target_file, align_dir=align_save_path,
-                                  unique_file=unique_file)
-    if subfolder == 'training' and sub_folder_len == len(file_names_unique):
-        for unique_file in tqdm(iterable=file_names_unique, desc='Motion Detection Progress'):
-            source_file = os.path.join(align_save_path, unique_file + '.pcd')
-            comb_save_path = os.path.join(comb_save_folder, unique_file + '.pcd')
-            detect_moving_objects(registered_point_cloud=source_file, save_path=comb_save_path)
+        if sub_folder_len < len(file_names_unique):
+            for unique_file in tqdm(iterable=file_names_unique, desc=subfolder + ' image registration'):
+                source_file = os.path.join(files_path, unique_file + '_' + f1 + '.pcd')
+                target_file = os.path.join(files_path, unique_file + '_' + f2 + '.pcd')
+                calib_file = os.path.join(calib_path, unique_file + '.txt')
+                register_point_clouds(source_file=source_file, target_file=target_file, align_dir=align_save_path,
+                                      unique_file=unique_file)
+        if subfolder == 'training' and sub_folder_len == len(file_names_unique):
+            for unique_file in tqdm(iterable=file_names_unique, desc='Motion Detection Progress'):
+                source_file = os.path.join(align_save_path, unique_file + '.pcd')
+                comb_save_path = os.path.join(comb_save_folder, unique_file + '.pcd')
+                source = o3d.io.read_point_cloud(source_file)
+                detect_moving_objects(registered_point_cloud=source, save_path=comb_save_path)

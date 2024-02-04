@@ -5,28 +5,10 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 import open3d as o3d
+import rgbd2pointcloud
+import segmentation_labelling
 
 # Define the paths
-base_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\"
-left_image_folder = os.path.join(base_path, "data_scene_flow\\image_2")
-right_image_folder = os.path.join(base_path, "data_scene_flow\\image_3")
-calib_folder = os.path.join(base_path, "data_scene_flow_calib\\calib_cam_to_cam")
-disp_output_folder = os.path.join(base_path, "data_scene_flow\Disp_images")
-rgb_output_folder = os.path.join(base_path, "data_scene_flow\\RGB_images")
-depth_output_folder = os.path.join(base_path, "data_scene_flow\\Depth_images")
-error_folder = os.path.join(base_path, "data_scene\\Error_Handling")
-error_df = pd.DataFrame()
-
-# Create output directories if they do not exist
-os.makedirs(disp_output_folder, exist_ok=True)
-os.makedirs(rgb_output_folder, exist_ok=True)
-os.makedirs(depth_output_folder, exist_ok=True)
-os.makedirs(error_folder, exist_ok=True)
-
-# Define the subfolders
-subfolders = ["testing", "training"]
-
-
 # Normalize data
 def normalize_images(*args):
     results = []
@@ -43,7 +25,8 @@ def load_calib(calib_file):
         for line in fin:
             if line[:9] == 'P_rect_02':
                 P2 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
-
+            elif line[:9] == 'P_rect_03':
+                P3 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
     return P2, P3
 
 
@@ -118,61 +101,81 @@ def save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disp
     pcd_file = os.path.join(cv2_pcd_folder, subfolder, img_file.replace('.png', '.pcd'))
     o3d.io.write_point_cloud(pcd_file, pcd)
 
+def first_do_this():
+    base_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\"
+    left_image_folder = os.path.join(base_path, "data_scene_flow\\image_2")
+    right_image_folder = os.path.join(base_path, "data_scene_flow\\image_3")
+    calib_folder = os.path.join(base_path, "data_scene_flow_calib\\calib_cam_to_cam")
+    disp_output_folder = os.path.join(base_path, "data_scene_flow\Disp_images")
+    rgb_output_folder = os.path.join(base_path, "data_scene_flow\\RGB_images")
+    depth_output_folder = os.path.join(base_path, "data_scene_flow\\Depth_images")
+    error_folder = os.path.join(base_path, "data_scene\\Error_Handling")
+    error_df = pd.DataFrame()
 
-# Iterate over subfolders
-for subfolder in subfolders:
-    left_images_path = os.path.join(left_image_folder, subfolder)
-    right_images_path = os.path.join(right_image_folder, subfolder)
-    calib_path = os.path.join(calib_folder, subfolder)
+    # Create output directories if they do not exist
+    os.makedirs(disp_output_folder, exist_ok=True)
+    os.makedirs(rgb_output_folder, exist_ok=True)
+    os.makedirs(depth_output_folder, exist_ok=True)
+    os.makedirs(error_folder, exist_ok=True)
 
-    # Get the list of image filenames in both directories
-    left_images = os.listdir(left_images_path)
-    right_images = os.listdir(right_images_path)
+    # Define the subfolders
+    subfolders = ["testing", "training"]
+    # Iterate over subfolders
+    for subfolder in subfolders:
+        left_images_path = os.path.join(left_image_folder, subfolder)
+        right_images_path = os.path.join(right_image_folder, subfolder)
+        calib_path = os.path.join(calib_folder, subfolder)
 
-    # Find common files in both directories
-    common_files = list(set(left_images) & set(right_images))
+        # Get the list of image filenames in both directories
+        left_images = os.listdir(left_images_path)
+        right_images = os.listdir(right_images_path)
 
-    # Iterate over images
-    for img_file in tqdm(iterable=common_files, desc=f'Processing now: {subfolder}'):
-        try:
-            # Load images
+        # Find common files in both directories
+        common_files = list(set(left_images) & set(right_images))
 
-            left_img_clr = cv2.imread(os.path.join(left_images_path, img_file))
-            right_img_clr = cv2.imread(os.path.join(right_images_path, img_file))
+        # Iterate over images
+        for img_file in tqdm(iterable=common_files, desc=f'Processing now: {subfolder}'):
+            try:
+                # Load images
 
-            left_img_GS = cv2.imread(os.path.join(left_images_path, img_file), cv2.IMREAD_GRAYSCALE)
-            right_img_GS = cv2.imread(os.path.join(right_images_path, img_file), cv2.IMREAD_GRAYSCALE)
+                left_img_clr = cv2.imread(os.path.join(left_images_path, img_file))
+                right_img_clr = cv2.imread(os.path.join(right_images_path, img_file))
 
-            # Load calibration file
-            calib_file = os.path.join(calib_path, img_file[:6] + '.txt')
-            P2, P3 = load_calib(calib_file)
+                left_img_GS = cv2.imread(os.path.join(left_images_path, img_file), cv2.IMREAD_GRAYSCALE)
+                right_img_GS = cv2.imread(os.path.join(right_images_path, img_file), cv2.IMREAD_GRAYSCALE)
 
-            # Generate disparity map
-            disparity = generate_disparity_map(left_img_GS, right_img_GS)
+                # Load calibration file
+                calib_file = os.path.join(calib_path, img_file[:6] + '.txt')
+                P2, P3 = load_calib(calib_file)
 
-            # Rectify images
-            rev_proj_matrix = stereo_rectify(right_img_clr, P2, P3)
+                # Generate disparity map
+                disparity = generate_disparity_map(left_img_GS, right_img_GS)
 
-            # Project to 3D
-            points_3D, pcd = get_3D(disparity, rev_proj_matrix)
+                # Rectify images
+                rev_proj_matrix = stereo_rectify(right_img_clr, P2, P3)
 
-            # Generate RGB image and depth image
-            depth_image = generate_rgbd_image(points_3D)
+                # Project to 3D
+                points_3D, pcd = get_3D(disparity, rev_proj_matrix)
 
-            # Save disparity map and RGB-D image
-            save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disparity, right_img_clr,
-                        depth_image, pcd, img_file, subfolder)
-        except cv2.error as e:
-            logging.error("OpenCV Error occurred", exc_info=True)
-            error_type = {'Error_Type': 'OpenCVError', 'Explanation': str(e), 'Stage': 'Image Processing',
-                          'File_Name': img_file}
-            error_df = error_df._append(error_type, ignore_index=True)
-        except Exception as e:
-            logging.error("Error occurred", exc_info=True)
-            error_type = {'Error_Type': type(e).__name__, 'Explanation': str(e), 'Stage': 'Image Processing',
-                          'File_Name': img_file}
-            error_df = error_df._append(error_type, ignore_index=True)
+                # Generate RGB image and depth image
+                depth_image = generate_rgbd_image(points_3D)
 
-# Save error DataFrame to Excel
-if error_df.dropna().empty:
-    error_df.to_excel(os.path.join(error_folder, 'errors.xlsx'), index=False)
+                # Save disparity map and RGB-D image
+                save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disparity, right_img_clr,
+                            depth_image, pcd, img_file, subfolder)
+            except cv2.error as e:
+                logging.error("OpenCV Error occurred", exc_info=True)
+                error_type = {'Error_Type': 'OpenCVError', 'Explanation': str(e), 'Stage': 'Image Processing',
+                              'File_Name': img_file}
+                error_df = error_df._append(error_type, ignore_index=True)
+            except Exception as e:
+                logging.error("Error occurred", exc_info=True)
+                error_type = {'Error_Type': type(e).__name__, 'Explanation': str(e), 'Stage': 'Image Processing',
+                              'File_Name': img_file}
+                error_df = error_df._append(error_type, ignore_index=True)
+
+    # Save error DataFrame to Excel
+    if error_df.dropna().empty:
+        error_df.to_excel(os.path.join(error_folder, 'errors.xlsx'), index=False)
+    rgbd2pointcloud.rgbd23d()
+    segmentation_labelling.do_this()

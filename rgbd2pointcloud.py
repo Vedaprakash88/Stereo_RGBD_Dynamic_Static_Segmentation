@@ -112,31 +112,31 @@ def create_point_cloud_from_depth(depth_image, ply_dir, sub_dir, file, calibrati
     o3d.io.write_point_cloud(os.path.join(ply_dir, sub_dir, file.replace('.png', '_dpt.pcd')), pcd)
     return f'{file} point cloud created'
 
+def rgbd23d ():
+    rgb_dir, depth_dir, ply_dir, sub_dirs, error_folder, error_df, calib_folder = get_paths()
 
-rgb_dir, depth_dir, ply_dir, sub_dirs, error_folder, error_df, calib_folder = get_paths()
+    for sub_dir in sub_dirs:
+        # Get list of files in each directory
+        rgb_files = os.listdir(os.path.join(rgb_dir, sub_dir))
+        depth_files = os.listdir(os.path.join(depth_dir, sub_dir))
 
-for sub_dir in sub_dirs:
-    # Get list of files in each directory
-    rgb_files = os.listdir(os.path.join(rgb_dir, sub_dir))
-    depth_files = os.listdir(os.path.join(depth_dir, sub_dir))
+        # Find common files in both directories
+        common_files = list(set(rgb_files) & set(depth_files))
 
-    # Find common files in both directories
-    common_files = list(set(rgb_files) & set(depth_files))
+        for file in tqdm(iterable=common_files, desc=sub_dir + ' Point Clouds Created:', colour='blue', unit='image'):
+            # Load RGB image
+            try:
+                rgb_image, depth_image = read_images(rgb_dir, depth_dir, sub_dir, file)
+                calib_file = os.path.join(calib_folder, sub_dir, file[:6] + '.txt')
+                calibration_params, cam2_parameters_ex = load_calib(calib_file)
+                create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibration_params, cam2_parameters_ex)
+                # msg2 = create_point_cloud_from_depth(depth_image, ply_dir, sub_dir, file, calibration_params)
+            except Exception as e:
+                logging.error("Error occurred", exc_info=True)
+                error_type = {'Error_Type': type(e).__name__, 'Explanation': str(e), 'Stage': 'Image Processing',
+                              'File_Name': file}
+                error_df = error_df._append(error_type, ignore_index=True)
 
-    for file in tqdm(iterable=common_files, desc=sub_dir + ' Point Clouds Created:', colour='blue', unit='image'):
-        # Load RGB image
-        try:
-            rgb_image, depth_image = read_images(rgb_dir, depth_dir, sub_dir, file)
-            calib_file = os.path.join(calib_folder, sub_dir, file[:6] + '.txt')
-            calibration_params, cam2_parameters_ex = load_calib(calib_file)
-            create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibration_params, cam2_parameters_ex)
-            # msg2 = create_point_cloud_from_depth(depth_image, ply_dir, sub_dir, file, calibration_params)
-        except Exception as e:
-            logging.error("Error occurred", exc_info=True)
-            error_type = {'Error_Type': type(e).__name__, 'Explanation': str(e), 'Stage': 'Image Processing',
-                          'File_Name': file}
-            error_df = error_df._append(error_type, ignore_index=True)
-
-# Save error DataFrame to Excel
-if not error_df.dropna().empty:
-    error_df.to_excel(os.path.join(error_folder, 'errors.xlsx'), index=False)
+    # Save error DataFrame to Excel
+    if not error_df.dropna().empty:
+        error_df.to_excel(os.path.join(error_folder, 'errors.xlsx'), index=False)
