@@ -43,13 +43,12 @@ def load_calib(calib_file):
         for line in fin:
             if line[:9] == 'P_rect_02':
                 P2 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
-            elif line[:9] == "P_rect_03":
-                P3 = np.array(line[11:].strip().split(" ")).astype('float32').reshape(3, -1)
+
     return P2, P3
 
 
 # Function to rectify images
-def stereo_rectify(left_img_clr, P2, P3):
+def stereo_rectify(img_clr, P2, P3):
     cam1 = P2[:, :3]  # left image - P2
     cam2 = P3[:, :3]  # right image - P3
 
@@ -60,14 +59,14 @@ def stereo_rectify(left_img_clr, P2, P3):
     # R1, R2, P1, P2, Q, validPixROI1, validPixROI2 = cv2.stereoRectify()
 
     cv2.stereoRectify(cameraMatrix1=cam1, cameraMatrix2=cam2, distCoeffs1=0, distCoeffs2=0,
-                      imageSize=left_img_clr.shape[:2], R=np.identity(3), T=Tmat, R1=None,
+                      imageSize=img_clr.shape[:2], R=np.identity(3), T=Tmat, R1=None,
                       R2=None, P1=None, P2=None, Q=rev_proj_matrix)
     return rev_proj_matrix
 
 
 # Function to generate disparity map
 def generate_disparity_map(left_img, right_img):
-    stereo = cv2.StereoBM_create(numDisparities=0, blockSize=11)
+    stereo = cv2.StereoBM_create(numDisparities=0, blockSize=5)
     disparity = stereo.compute(left_img, right_img).astype(np.float32) / 16.0
     return disparity
 
@@ -152,7 +151,7 @@ for subfolder in subfolders:
             disparity = generate_disparity_map(left_img_GS, right_img_GS)
 
             # Rectify images
-            rev_proj_matrix = stereo_rectify(left_img_clr, P2, P3)
+            rev_proj_matrix = stereo_rectify(right_img_clr, P2, P3)
 
             # Project to 3D
             points_3D, pcd = get_3D(disparity, rev_proj_matrix)
@@ -161,7 +160,7 @@ for subfolder in subfolders:
             depth_image = generate_rgbd_image(points_3D)
 
             # Save disparity map and RGB-D image
-            save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disparity, left_img_clr,
+            save_images(disp_output_folder, rgb_output_folder, depth_output_folder, disparity, right_img_clr,
                         depth_image, pcd, img_file, subfolder)
         except cv2.error as e:
             logging.error("OpenCV Error occurred", exc_info=True)
