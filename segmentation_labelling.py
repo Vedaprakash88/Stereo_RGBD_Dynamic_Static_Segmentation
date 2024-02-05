@@ -5,6 +5,8 @@ import os
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 
+
+
 def get_translation():
     trans_init = np.eye(4)
     trans_init[:3, 3] = np.array([0.54, 0., 0.])
@@ -39,6 +41,11 @@ def register_point_clouds(source_file, target_file, align_dir, unique_file):
     threshold = 0.01
     # show_reg_status(source, target, trans_init, threshold)
 
+    # Voxel downsampling
+    # voxel_size = 0.05
+    # source = source.voxel_down_sample(voxel_size)
+    # target = target.voxel_down_sample(voxel_size)
+
     # Estimate normals
     source.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
     target.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
@@ -57,7 +64,7 @@ def register_point_clouds(source_file, target_file, align_dir, unique_file):
     # Save aligned point cloud
     o3d.io.write_point_cloud(filename=os.path.join(align_dir, unique_file + '.pcd'), pointcloud=source)
 
-def detect_moving_objects(registered_point_cloud, save_path, distance_threshold=5):
+def detect_moving_objects(registered_point_cloud, file, folder, distance_threshold=5):
     # Convert point cloud to numpy array
     point_cloud_np = np.asarray(registered_point_cloud.points)
 
@@ -84,18 +91,22 @@ def detect_moving_objects(registered_point_cloud, save_path, distance_threshold=
     static_point_cloud.points = o3d.utility.Vector3dVector(static_points)
     static_point_cloud.colors = o3d.utility.Vector3dVector(static_colors)
 
-    # Combine moving and static point clouds
-    combined_point_cloud = o3d.geometry.PointCloud()
-    combined_point_cloud.points = o3d.utility.Vector3dVector(
-        np.vstack([moving_point_cloud.points, static_point_cloud.points]))
-    combined_point_cloud.colors = o3d.utility.Vector3dVector(
-        np.vstack([moving_point_cloud.colors, static_point_cloud.colors]))
+    # # Combine moving and static point clouds
+    # combined_point_cloud = o3d.geometry.PointCloud()
+    # combined_point_cloud.points = o3d.utility.Vector3dVector(
+    #     np.vstack([moving_point_cloud.points, static_point_cloud.points]))
+    # combined_point_cloud.colors = o3d.utility.Vector3dVector(
+    #     np.vstack([moving_point_cloud.colors, static_point_cloud.colors]))
 
     # Visualize the combined result
     # o3d.visualization.draw_geometries([combined_point_cloud])
 
+    static_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\labeled\\" + folder + "\\static\\" + file + '.pcd'
+    moving_path = "D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\labeled\\"+ folder + "\\moving\\" + file + '.pcd'
+
     # Save the combined point cloud to a file
-    o3d.io.write_point_cloud(save_path, combined_point_cloud)
+    o3d.io.write_point_cloud(static_path, static_point_cloud)
+    o3d.io.write_point_cloud(moving_path, moving_point_cloud)
 
 
 # Example usage
@@ -121,16 +132,15 @@ def do_this():
         sub_folder_len = len(os.listdir(align_save_path))
         calib_path = os.path.join(calib_folder, subfolder)
 
-        if sub_folder_len < len(file_names_unique):
-            for unique_file in tqdm(iterable=file_names_unique, desc=subfolder + ' image registration'):
-                source_file = os.path.join(files_path, unique_file + '_' + f1 + '.pcd')
-                target_file = os.path.join(files_path, unique_file + '_' + f2 + '.pcd')
-                calib_file = os.path.join(calib_path, unique_file + '.txt')
-                register_point_clouds(source_file=source_file, target_file=target_file, align_dir=align_save_path,
-                                      unique_file=unique_file)
-        if subfolder == 'training' and sub_folder_len == len(file_names_unique):
-            for unique_file in tqdm(iterable=file_names_unique, desc='Motion Detection Progress'):
-                source_file = os.path.join(align_save_path, unique_file + '.pcd')
-                comb_save_path = os.path.join(comb_save_folder, unique_file + '.pcd')
-                source = o3d.io.read_point_cloud(source_file)
-                detect_moving_objects(registered_point_cloud=source, save_path=comb_save_path)
+        # for unique_file in tqdm(iterable=file_names_unique, desc=subfolder + ' image registration'):
+        #     source_file = os.path.join(files_path, unique_file + '_' + f1 + '.pcd')
+        #     target_file = os.path.join(files_path, unique_file + '_' + f2 + '.pcd')
+        #     calib_file = os.path.join(calib_path, unique_file + '.txt')
+        #     register_point_clouds(source_file=source_file, target_file=target_file, align_dir=align_save_path,
+        #                      unique_file=unique_file)
+        for unique_file in tqdm(iterable=file_names_unique, desc='Motion Detection Progress'):
+            source_file = os.path.join(align_save_path, unique_file + '.pcd')
+            source = o3d.io.read_point_cloud(source_file)
+            detect_moving_objects(registered_point_cloud=source, file=unique_file, folder=subfolder)
+
+do_this()

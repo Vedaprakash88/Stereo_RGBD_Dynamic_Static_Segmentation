@@ -5,8 +5,33 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 import open3d as o3d
-import rgbd2pointcloud
-import segmentation_labelling
+
+def triangulation_stereo(disparity, P1, P2):
+
+    # Get 3D coordinates using triangulation
+    points_2d = np.nonzero(disparity)
+    points_2d = np.vstack((points_2d[1], points_2d[0]))  # Swap x and y
+    points_2d_homogeneous = np.vstack((points_2d, np.ones((1, points_2d.shape[1]))))
+
+    # Split into two sets of points
+    points_set1 = points_2d_homogeneous[:, :points_2d_homogeneous.shape[1] // 2]
+    points_set2 = points_2d_homogeneous[:, points_2d_homogeneous.shape[1] // 2:]
+
+    # Triangulate points
+    points_3d_homogeneous = cv2.triangulatePoints(P1, P2, points_set1, points_set2)
+
+    # Convert homogeneous 3D coordinates to 3D coordinates
+    points_3D = (points_3d_homogeneous[:-1, :] / points_3d_homogeneous[-1, :]).T
+
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points_3D.reshape(-1, 3))
+    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+
+    # reflect on x-axis
+    points_3D[:, :, 0] = -points_3D[:, :, 0]
+
+    return points_3D, pcd
+
 
 # Define the paths
 # Normalize data
@@ -38,6 +63,10 @@ def stereo_rectify(img_clr, P2, P3):
     Tmat = np.array([0.54, 0., 0.])  # from image of KITTI car
 
     rev_proj_matrix = np.zeros((4, 4))
+    rev_proj_matrix[:3, 3] = np.asarray([695.7519, 559.7571, 903.7596])
+    x = -1/(-0.4731050)
+    y = (695.7519 - 696.0217) / -0.4731050
+    rev_proj_matrix[3:, 2:] = np.asarray([x, y])
 
     # R1, R2, P1, P2, Q, validPixROI1, validPixROI2 = cv2.stereoRectify()
 
@@ -49,13 +78,14 @@ def stereo_rectify(img_clr, P2, P3):
 
 # Function to generate disparity map
 def generate_disparity_map(left_img, right_img):
-    stereo = cv2.StereoBM_create(numDisparities=0, blockSize=5)
+    stereo = cv2.StereoSGBM_create(numDisparities=16, blockSize=5)
     disparity = stereo.compute(left_img, right_img).astype(np.float32) / 16.0
     return disparity
 
 # Function to generate RGB-D image
 def generate_rgbd_image(points_3D):
     # Create RGB-D image
+    depth_image = points_3D[..., 2]  # Depth values
     depth_image = points_3D[..., 2]  # Depth values
     return depth_image
 
@@ -64,9 +94,8 @@ def get_3D(disparity, rev_proj_matrix):
     points_3D = cv2.reprojectImageTo3D(disparity, rev_proj_matrix)
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points_3D.reshape(-1, 3))
-
-    # reflect on x-axis
-    points_3D[:, :, 0] = -points_3D[:, :, 0]
+    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+    points_3D[:, :, 0] = -points_3D[:, :, 0]  # reflect on x-axis
     return points_3D, pcd
 
 
@@ -151,6 +180,10 @@ def first_do_this():
                 # Generate disparity map
                 disparity = generate_disparity_map(left_img_GS, right_img_GS)
 
+                # generate depth using triangulation
+
+                # points_3D, pcd = triangulation_stereo(disparity, P2, P3)
+
                 # Rectify images
                 rev_proj_matrix = stereo_rectify(right_img_clr, P2, P3)
 
@@ -177,5 +210,3 @@ def first_do_this():
     # Save error DataFrame to Excel
     if error_df.dropna().empty:
         error_df.to_excel(os.path.join(error_folder, 'errors.xlsx'), index=False)
-    rgbd2pointcloud.rgbd23d()
-    segmentation_labelling.do_this()

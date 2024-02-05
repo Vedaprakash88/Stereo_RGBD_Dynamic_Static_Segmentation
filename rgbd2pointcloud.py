@@ -57,18 +57,13 @@ def read_images(rgb_dir, depth_dir, sub_dir, file):
 
 def create_point_cloud(rgb_image, depth_image, ply_dir, sub_dir, file, calibration_params, cam2_parameters_ex):
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(color=rgb_image, depth=depth_image,
-                                                                    convert_rgb_to_intensity=True, depth_scale=1, depth_trunc=200)
+                                                                    convert_rgb_to_intensity=True, depth_scale=1, depth_trunc=250)
 
     calibration_params = list(map(float, calibration_params))
-
-
     fx = calibration_params[0]  # Focal length in x-axis
     fy = calibration_params[1]  # Focal length in y-axis
     cx = calibration_params[2]  # Principal point in x-axis
     cy = calibration_params[3]  # Principal point in y-axis
-
-
-
     # Get the width and height of the image
     height, width = np.asarray(rgb_image).shape[:2]
 
@@ -102,7 +97,7 @@ def create_point_cloud_from_depth(depth_image, ply_dir, sub_dir, file, calibrati
 
     # Create a point cloud from the depth image
     pcd = o3d.geometry.PointCloud.create_from_depth_image(
-        depth=depth_image, intrinsic=intrinsic, depth_scale=1000.0, depth_trunc=1000.0, stride=1)
+        depth=depth_image, intrinsic=intrinsic, depth_scale=1, depth_trunc=100, stride=1)
 
     # Flip it, otherwise the pointcloud will be upside down
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
