@@ -57,8 +57,8 @@ def parse_dataset():
             train_points.append(np.asarray(source_tr.points))
             train_labels.append(i)
 
-    max_len = max(len(seq) for seq in train_points)
-    train_points = np.asarray([np.pad(seq, ((0, max_len - len(seq)), (0, 0)), 'constant') for seq in train_points])
+    max_len_tr = max(len(seq) for seq in train_points)
+    train_points = np.asarray([np.pad(seq, ((0, max_len_tr - len(seq)), (0, 0)), 'constant') for seq in train_points])
 
     for i, folder_te in enumerate(folders_test):
         print("processing class: {}".format(os.path.basename(folder_te)))
@@ -71,18 +71,15 @@ def parse_dataset():
             test_points.append(np.asarray(source_te.points))
             test_labels.append(i)
 
-    max_len = max(len(seq) for seq in test_points)
-    test_points = np.asarray([np.pad(seq, ((0, max_len - len(seq)), (0, 0)), 'constant') for seq in test_points])
+    max_len_te = max(len(seq) for seq in test_points)
+    test_points = np.asarray([np.pad(seq, ((0, max_len_te - len(seq)), (0, 0)), 'constant') for seq in test_points])
 
-    print(train_points.shape)
-    print(test_points.shape)
+
 
     train_points = downsample_point_cloud(train_points, target_points=2100)
     test_points = downsample_point_cloud(test_points, target_points=2100)
 
-    print(train_points.shape)
-    print(test_points.shape)
-
+    max_len = max(max_len_te, max_len_tr)
 
     return (
         train_points,
@@ -91,7 +88,6 @@ def parse_dataset():
         test_labels,
         class_map,
         max_len,
-
     )
 
 train_points, test_points, train_labels, test_labels, CLASS_MAP, max_len = parse_dataset()
