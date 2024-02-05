@@ -23,12 +23,12 @@ for gpu in gpus:
 datadir_train = 'D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\labeled\\training\\'
 datadir_val = 'D:\\10. SRH_Academia\\1. All_Notes\\4. Thesis\\5. WIP\\Data\\KITTI_Motion\\data_scene_flow\\labeled\\testing\\'
 
-def downsample_point_cloud(point_cloud, target_points=2100):
+def downsample_point_cloud(point_cloud, target_points):
     # Get the total number of points in the original point cloud
     total_points = point_cloud.shape[1]
 
-    # Generate indices for uniform sampling
-    sampled_indices = np.linspace(0, total_points - 1, target_points, dtype=int)
+    # Generate indices for random sampling
+    sampled_indices = np.random.choice(total_points, size=target_points, replace=False)
 
     # Use the indices to select a subset of points
     downsampled_point_cloud = point_cloud[:, sampled_indices, :]
@@ -73,8 +73,6 @@ def parse_dataset():
 
     max_len_te = max(len(seq) for seq in test_points)
     test_points = np.asarray([np.pad(seq, ((0, max_len_te - len(seq)), (0, 0)), 'constant') for seq in test_points])
-
-
 
     train_points = downsample_point_cloud(train_points, target_points=2100)
     test_points = downsample_point_cloud(test_points, target_points=2100)
@@ -181,12 +179,11 @@ model = keras.Model(inputs=inputs, outputs=outputs, name="pointnet")
 print(model.summary())
 
 # compile and train
-
+optimizer = keras.optimizers.Adam(learning_rate=0.001, clipvalue=1.0)
 model.compile(
     loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-    optimizer=keras.optimizers.Adam(learning_rate=0.001),
+    optimizer=optimizer,
     metrics=["sparse_categorical_accuracy"],
-
 )
 
 model.fit(train_dataset, epochs=50, validation_data=test_dataset)
