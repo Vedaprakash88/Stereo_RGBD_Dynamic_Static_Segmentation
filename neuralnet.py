@@ -79,7 +79,7 @@ def parse_dataset():
     train_points = downsample_point_cloud(train_points, target_points=2100)
     test_points = downsample_point_cloud(test_points, target_points=2100)
 
-    max_len = max(max_len_te, max_len_tr)
+    max_len = max(max(len(seq) for seq in test_points), max(len(seq) for seq in train_points))
 
     return (
         train_points,
@@ -183,13 +183,13 @@ print(model.summary())
 # compile and train
 
 model.compile(
-    loss=tf.keras.losses.CategoricalCrossentropy(),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(),
     optimizer=keras.optimizers.Adam(learning_rate=0.001),
-    metrics=["categorical_accuracy"],
+    metrics=["sparse_categorical_accuracy"],
 
 )
 
-model.fit(train_dataset, epochs=20, validation_data=test_dataset)
+model.fit(train_dataset, epochs=50, validation_data=test_dataset)
 
 # visualize
 
